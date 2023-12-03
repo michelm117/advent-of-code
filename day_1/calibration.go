@@ -92,53 +92,39 @@ func getCalibrationValueSum(t *Tree, mapping map[string]string, lines []string) 
 	return sum
 }
 
-func getCalibrationValue(line string, t *Tree, reversedTree *Tree, mapping map[string]string) (string, string, error) {
+func getCalibrationValue(line string, tree *Tree, reversedTree *Tree, mapping map[string]string) (string, string, error) {
 	// find left match
-	start := 0
-	end := 1
-	leftMatch := ""
-	for start < len(line) {
-		pattern := line[start:end]
-		if !t.IsPrefix(pattern) {
-			start++
-			end = start + 1
-			continue
-		}
-		if mapping[pattern] != "" {
-			leftMatch = mapping[pattern]
-			break
-		}
-		end++
-	}
-
-	if leftMatch == "" {
-		return "", "", errors.New("No left match found in " + line)
+	leftMatch, err := matchPattern(line, tree)
+	if err != nil {
+		return "", "", err
 	}
 
 	// find right match
 	line = helper.ReverseString(line)
-	start = 0
-	end = 1
-	rightMatch := ""
+	rightMatch, err := matchPattern(line, reversedTree)
+	if err != nil {
+		return "", "", err
+	}
+	return mapping[leftMatch], mapping[rightMatch], nil
+}
+
+func matchPattern(line string, t *Tree) (string, error) {
+	start := 0
+	end := 1
 	for start < len(line) {
 		pattern := line[start:end]
-		if !reversedTree.IsPrefix(pattern) {
+		isPrefix, isFullMatch := t.IsPrefix(pattern)
+		if !isPrefix {
 			start++
 			end = start + 1
 			continue
 		}
-		if mapping[pattern] != "" {
-			rightMatch = mapping[pattern]
-			break
+		if isFullMatch {
+			return pattern, nil
 		}
 		end++
 	}
-
-	if rightMatch == "" {
-		return "", "", errors.New("No right match found in " + line)
-	}
-
-	return leftMatch, rightMatch, nil
+	return "", errors.New("No match found in " + line)
 }
 
 func concatAndTransformToNumber(leftValue string, rightValue string) int {

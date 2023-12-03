@@ -68,13 +68,14 @@ func (t *Tree) getAllPatternsRecursive(node *Node, prefix string) []string {
 	return patterns
 }
 
-func (t *Tree) IsPrefix(prefix string) bool {
-	return t.isPrefixRecursive(t.Tokens, strings.ToUpper(prefix)) != nil
+func (t *Tree) IsPrefix(prefix string) (bool, bool) {
+	node, fullMatch := t.isPrefixRecursive(t.Tokens, strings.ToUpper(prefix))
+	return node != nil, fullMatch
 }
 
-func (t *Tree) isPrefixRecursive(node *Node, prefix string) *Node {
+func (t *Tree) isPrefixRecursive(node *Node, prefix string) (*Node, bool) {
 	if len(prefix) == 0 {
-		return node
+		return node, node.Nodes == nil
 	}
 
 	for _, child := range node.Nodes {
@@ -82,7 +83,7 @@ func (t *Tree) isPrefixRecursive(node *Node, prefix string) *Node {
 			return t.isPrefixRecursive(child, prefix[len(child.Value):])
 		}
 	}
-	return nil
+	return nil, false
 }
 
 func (t *Tree) Reverse() *Tree {
