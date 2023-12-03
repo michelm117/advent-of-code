@@ -5,12 +5,27 @@ import (
 	"fmt"
 
 	"github.com/michelm117/advent-of-code/day_1"
+	"github.com/michelm117/advent-of-code/day_2"
 )
 
 func main() {
-	filePath := flag.String("filePath", "foo", "path to the input file")
+	day := flag.String("day", "1", "the day to run")
+	filePath := flag.String("filePath", "./day_1/input.txt", "path to the input file")
+
 	flag.Parse()
 
-	calibrationSum := day_1.Calibrate(*filePath)
-	fmt.Println("Calibration sum: " + fmt.Sprint(calibrationSum))
+	switch *day {
+	case "1":
+		calibrationSum := day_1.Calibrate(*filePath)
+		fmt.Println("Calibration sum: " + fmt.Sprint(calibrationSum))
+
+	case "2":
+		sumOfPossibleGames, sumOfPower := day_2.Solve(*filePath)
+		fmt.Println("Sum of possible games: " + fmt.Sprint(sumOfPossibleGames))
+		fmt.Println("Sum of power: " + fmt.Sprint(sumOfPower))
+
+	default:
+		fmt.Println("Day not found")
+	}
+
 }
