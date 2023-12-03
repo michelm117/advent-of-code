@@ -1,7 +1,7 @@
 package day_3
 
 import (
-	"fmt"
+	"regexp"
 	"strconv"
 
 	"github.com/michelm117/advent-of-code/utils"
@@ -9,30 +9,36 @@ import (
 
 func Solve(filePath string) int {
 	lines := utils.ReadInputFileAsArray(filePath)
-	return sumOfParts(lines)
-
+	engine := NewEngine(lines)
+	sumOfParts := sumOfParts(engine, lines)
+	return sumOfParts
 }
 
-func sumOfParts(lines []string) int {
-	engine := NewEngine(lines)
-	numberCoords := engine.CollectNumbers()
-	sum := 0
-	for _, numberCoord := range numberCoords {
-		symbols := []string{}
-		for _, coord := range numberCoord.coords {
-			symbols = append(symbols, engine.getAdjacentSymbols(coord.x, coord.y)...)
-		}
-
-		if len(symbols) > 0 {
-			nbr, err := strconv.Atoi(numberCoord.number)
-			if err != nil {
-				panic(err)
-			}
-			sum += nbr
-		} else {
-			fmt.Println("No adjacent symbols for", numberCoord.number)
-		}
+func sumOfParts(engine *EngineSchematic, lines []string) int {
+	numbers := []string{}
+	symbolsOnly := regexp.MustCompile(`[^0-9.]`)
+	symbols := engine.CollectSymbols(symbolsOnly)
+	for _, symbol := range symbols {
+		numbers = append(numbers, engine.FindNumbers(symbol.coord)...)
 	}
 
+	sum := 0
+	for _, number := range numbers {
+		if number == "" {
+			continue
+		}
+		value, _ := strconv.Atoi(number)
+
+		sum += value
+	}
 	return sum
 }
+
+// func gearRatios(engine *EngineSchematic, lines []string) []string {
+// 	// gearRatios := []string{}
+// 	// symbols := engine.CollectSymbols()
+// 	// for _, symbol := range symbols {
+// 	// 	gearRatios = append(gearRatios, engine.FindGearRatio(symbol.coord)...)
+// 	// }
+// 	// return gearRatios
+// }

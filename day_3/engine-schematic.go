@@ -3,6 +3,7 @@ package day_3
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -10,9 +11,9 @@ type Coord struct {
 	x, y int
 }
 
-type NumberCoord struct {
-	number string
-	coords []Coord
+type Symbol struct {
+	value string
+	coord Coord
 }
 
 type EngineSchematic struct {
@@ -41,8 +42,12 @@ func (e *EngineSchematic) GenerateVisual(lines []string) [][]string {
 	return mapOfLines
 }
 
-func (e *EngineSchematic) getAdjacentSymbols(x, y int) []string {
-	symbols := []string{}
+func (e *EngineSchematic) GetSymbolAt(x, y int) string {
+	return e.visual[y][x]
+}
+
+func (e *EngineSchematic) getAdjacentMatches(x, y int, re *regexp.Regexp) []Symbol {
+	symbols := []Symbol{}
 	coords := []Coord{
 		{-1, 0}, {1, 0}, {0, -1}, {0, 1}, // left, right, up, down
 		{-1, -1}, {1, -1}, {-1, 1}, {1, 1}, // diagonals
@@ -51,57 +56,124 @@ func (e *EngineSchematic) getAdjacentSymbols(x, y int) []string {
 	for _, coord := range coords {
 		newX, newY := x+coord.x, y+coord.y
 		if newX >= 0 && newX < len(e.visual[y]) && newY >= 0 && newY < len(e.visual) {
-			symbol := string(e.visual[newY][newX])
-			// ignore numbers and dots
-			if symbol != "." && !regexp.MustCompile(`\d`).MatchString(symbol) {
-				symbols = append(symbols, symbol)
+			symbol := e.GetSymbolAt(newX, newY)
+			if re.MatchString(symbol) {
+				symbols = append(symbols, Symbol{symbol, Coord{newX, newY}})
 			}
 		}
 	}
-
 	return symbols
 }
 
-func (e *EngineSchematic) CollectNumbers() []NumberCoord {
-	allNumbers := []NumberCoord{}
-	re := regexp.MustCompile(`\d`)
+func (e *EngineSchematic) CollectSymbols(re *regexp.Regexp) []Symbol {
+	allSymbols := []Symbol{}
 	for y, line := range e.visual {
-		tmpNumber := NumberCoord{}
-		numberIsAttached := false
 		for x, char := range line {
-			isNumber := re.MatchString(char)
-
-			if isNumber && x == len(line)-1 {
-				fmt.Println("End of line", char)
-				numberIsAttached = false
-				allNumbers = append(allNumbers, tmpNumber)
-				continue
+			if re.MatchString(char) {
+				allSymbols = append(allSymbols, Symbol{char, Coord{x, y}})
 			}
-
-			// start of a new number
-			if isNumber && !numberIsAttached {
-				numberIsAttached = true
-				tmpNumber = NumberCoord{string(char), []Coord{{x, y}}}
-				continue
-			}
-
-			// continue a number
-			if isNumber && numberIsAttached {
-				tmpNumber.number += string(char)
-				tmpNumber.coords = append(tmpNumber.coords, Coord{x, y})
-				continue
-			}
-
-			// end of a number
-			if !isNumber && numberIsAttached {
-				numberIsAttached = false
-				allNumbers = append(allNumbers, tmpNumber)
-				continue
-			}
-
 		}
 	}
-	return allNumbers
+	return allSymbols
+}
+
+func (e *EngineSchematic) FindNumbers(start Coord) []string {
+	isNumber := regexp.MustCompile(`[0-9]`)
+	tmpNumbers := e.getEmptyVisual()
+	for _, symbol := range e.getAdjacentMatches(start.x, start.y, isNumber) {
+		tmpNumbers =
+			e.findNumbersRecursive(isNumber, symbol.coord.x, symbol.coord.y, tmpNumbers)
+	}
+	numbers := []string{}
+	for _, line := range tmpNumbers {
+		numberStrings := getNumberStrings(line)
+		numbers = append(numbers, numberStrings...)
+	}
+	return numbers
+}
+
+func getNumberStrings(arr []string) []string {
+	result := []string{}
+	tmpNumber := ""
+	appending := false
+
+	for _, str := range arr {
+		if str != "" {
+			num, err := strconv.Atoi(str)
+			if err == nil && num >= 0 && num <= 9 {
+				if !appending {
+					appending = true
+					tmpNumber = strconv.Itoa(num)
+				} else {
+					tmpNumber += strconv.Itoa(num)
+				}
+			} else {
+				if appending {
+					appending = false
+					result = append(result, tmpNumber)
+					tmpNumber = ""
+				}
+			}
+		} else {
+			if appending {
+				appending = false
+				result = append(result, tmpNumber)
+				tmpNumber = ""
+			}
+		}
+	}
+
+	if appending {
+		result = append(result, tmpNumber)
+	}
+
+	return result
+}
+
+func (e *EngineSchematic) findNumbersRecursive(isNumber *regexp.Regexp, x, y int, number [][]string) [][]string {
+	symbol := e.GetSymbolAt(x, y)
+	if !isNumber.MatchString(symbol) {
+		return number
+	}
+	if number[y][x] != "" {
+		return number
+	}
+	number[y][x] = symbol
+	tmpOne := make([]string, len(e.visual[y]))
+	if x+1 < len(e.visual[y]) {
+		tmpOne = e.findNumbersRecursive(isNumber, x+1, y, number)[y]
+	}
+
+	tmpTwo := make([]string, len(e.visual[y]))
+	if x-1 >= 0 {
+		tmpTwo = e.findNumbersRecursive(isNumber, x-1, y, number)[y]
+	}
+
+	//merge tmpOne and tmpTwo
+	merged := make([]string, len(e.visual[y]))
+	for i := range tmpOne {
+		if tmpOne[i] == "" && tmpTwo[i] == "" {
+			merged[i] = ""
+		} else if tmpOne[i] == tmpTwo[i] {
+			merged[i] = tmpOne[i]
+		} else if tmpOne[i] == "" && tmpTwo[i] != "" {
+			merged[i] = tmpTwo[i]
+		} else if tmpOne[i] != "" && tmpTwo[i] == "" {
+			merged[i] = tmpOne[i]
+		} else {
+			panic("Different values in same position found")
+		}
+	}
+	number[y] = merged
+	return number
+}
+
+func (e *EngineSchematic) getEmptyVisual() [][]string {
+	emptyVisual := make([][]string, len(e.visual))
+	for i := range emptyVisual {
+		emptyVisual[i] = make([]string, len(e.visual[i]))
+	}
+	return emptyVisual
 }
 
 func splitStringToCharArray(line string) []string {
