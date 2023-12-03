@@ -7,11 +7,13 @@ import (
 	"github.com/michelm117/advent-of-code/utils"
 )
 
-func Solve(filePath string) int {
+func Solve(filePath string) (int, int) {
 	lines := utils.ReadInputFileAsArray(filePath)
 	engine := NewEngine(lines)
 	sumOfParts := sumOfParts(engine, lines)
-	return sumOfParts
+
+	gearRatio := gearRatios(engine, lines)
+	return sumOfParts, gearRatio
 }
 
 func sumOfParts(engine *EngineSchematic, lines []string) int {
@@ -34,11 +36,21 @@ func sumOfParts(engine *EngineSchematic, lines []string) int {
 	return sum
 }
 
-// func gearRatios(engine *EngineSchematic, lines []string) []string {
-// 	// gearRatios := []string{}
-// 	// symbols := engine.CollectSymbols()
-// 	// for _, symbol := range symbols {
-// 	// 	gearRatios = append(gearRatios, engine.FindGearRatio(symbol.coord)...)
-// 	// }
-// 	// return gearRatios
-// }
+func gearRatios(engine *EngineSchematic, lines []string) int {
+	symbolsOnly := regexp.MustCompile(`\*`)
+	symbols := engine.CollectSymbols(symbolsOnly)
+	sum := 0
+	for _, symbol := range symbols {
+		numbers := engine.FindNumbers(symbol.coord)
+		if len(numbers) != 2 {
+			continue
+		}
+
+		num1, _ := strconv.Atoi(numbers[0])
+		num2, _ := strconv.Atoi(numbers[1])
+		sum += num1 * num2
+
+	}
+
+	return sum
+}

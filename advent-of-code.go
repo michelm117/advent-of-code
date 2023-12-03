@@ -26,8 +26,9 @@ func main() {
 		fmt.Println("Sum of power: " + fmt.Sprint(sumOfPower))
 
 	case "3":
-		notPart := day_3.Solve(*filePath)
+		notPart, gearRatio := day_3.Solve(*filePath)
 		fmt.Println("Sum of parts:", fmt.Sprint(notPart))
+		fmt.Println("gearRatio: ", fmt.Sprint(gearRatio))
 
 	default:
 		fmt.Println("Day not found")
