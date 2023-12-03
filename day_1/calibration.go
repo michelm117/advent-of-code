@@ -3,75 +3,150 @@ package day_1
 import (
 	"errors"
 	"fmt"
-	"os"
 	"strconv"
-	"strings"
-	"unicode"
+
+	helper "github.com/michelm117/advent-of-code/utils"
 )
 
 func Calibrate(filePath string) int {
-	lines := readInputFileAsArray(filePath)
-	return getCalibrationValueSum(lines)
+	t := initTree()
+	mapping := map[string]string{
+		"ONE":   "1",
+		"TWO":   "2",
+		"THREE": "3",
+		"FOUR":  "4",
+		"FIVE":  "5",
+		"SIX":   "6",
+		"SEVEN": "7",
+		"EIGHT": "8",
+		"NINE":  "9",
+		"one":   "1",
+		"two":   "2",
+		"three": "3",
+		"four":  "4",
+		"five":  "5",
+		"six":   "6",
+		"seven": "7",
+		"eight": "8",
+		"nine":  "9",
+
+		"ENO":   "1",
+		"OWT":   "2",
+		"EERHT": "3",
+		"RUOF":  "4",
+		"EVIF":  "5",
+		"XIS":   "6",
+		"NEVES": "7",
+		"THGIE": "8",
+		"ENIN":  "9",
+		"eno":   "1",
+		"owt":   "2",
+		"eerht": "3",
+		"ruof":  "4",
+		"evif":  "5",
+		"xis":   "6",
+		"neves": "7",
+		"thgie": "8",
+		"enin":  "9",
+
+		"1": "1",
+		"2": "2",
+		"3": "3",
+		"4": "4",
+		"5": "5",
+		"6": "6",
+		"7": "7",
+		"8": "8",
+		"9": "9",
+	}
+	lines := helper.ReadInputFileAsArray(filePath)
+	return getCalibrationValueSum(t, mapping, lines)
 }
 
-func getCalibrationValueSum(lines []string) int {
+func initTree() *Tree {
+	t := Tree{}
+	patterns := []string{"ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE"}
+	for _, pattern := range patterns {
+		t.AddPattern(pattern)
+	}
+	// add 1 to 9 to the tree
+	for i := 1; i < 10; i++ {
+		t.AddPattern(strconv.FormatInt(int64(i), 10))
+	}
+	return &t
+}
+
+func getCalibrationValueSum(t *Tree, mapping map[string]string, lines []string) int {
+	rt := t.Reverse()
+
 	sum := 0
 	for _, line := range lines {
-		val, err := getCalibrationValue(line)
+		l, r, err := getCalibrationValue(line, t, rt, mapping)
 		if err != nil {
-			fmt.Println("Error getting calibration value: " + err.Error())
-			fmt.Println("Skipping line: " + line)
+			fmt.Println(err, "\nSkipping line")
 			continue
 		}
-		sum += val
+
+		sum += concatAndTransformToNumber(l, r)
 	}
 	return sum
 }
 
-func getCalibrationValue(line string) (int, error) {
-	leftPos := -1
-	rightPos := -1
-	for i := 0; i < len(line); i++ {
-		char := rune(line[i])
-		if unicode.IsDigit(char) {
-			leftPos = i
+func getCalibrationValue(line string, t *Tree, reversedTree *Tree, mapping map[string]string) (string, string, error) {
+	// find left match
+	start := 0
+	end := 1
+	leftMatch := ""
+	for start < len(line) {
+		pattern := line[start:end]
+		if !t.IsPrefix(pattern) {
+			start++
+			end = start + 1
+			continue
+		}
+		if mapping[pattern] != "" {
+			leftMatch = mapping[pattern]
 			break
 		}
+		end++
 	}
 
-	for i := len(line) - 1; i >= 0; i-- {
-		char := rune(line[i])
-		if unicode.IsDigit(char) {
-			rightPos = i
+	if leftMatch == "" {
+		return "", "", errors.New("No left match found in " + line)
+	}
+
+	// find right match
+	line = helper.ReverseString(line)
+	start = 0
+	end = 1
+	rightMatch := ""
+	for start < len(line) {
+		pattern := line[start:end]
+		if !reversedTree.IsPrefix(pattern) {
+			start++
+			end = start + 1
+			continue
+		}
+		if mapping[pattern] != "" {
+			rightMatch = mapping[pattern]
 			break
 		}
+		end++
 	}
 
-	if leftPos == -1 || rightPos == -1 {
-		return 0, errors.New("Line does not contain digit: " + line)
+	if rightMatch == "" {
+		return "", "", errors.New("No right match found in " + line)
 	}
 
-	calibrationValue, err := concatToInt(string(line[leftPos]), string(line[rightPos]))
-	if err != nil {
-		return 0, err
-	}
-
-	return calibrationValue, nil
+	return leftMatch, rightMatch, nil
 }
 
-func concatToInt(leftValue string, rightValue string) (int, error) {
+func concatAndTransformToNumber(leftValue string, rightValue string) int {
 	concatenatedValue := leftValue + rightValue
+
 	value, err := strconv.Atoi(concatenatedValue)
 	if err != nil {
-		return 0, errors.New("Could not convert string to int: " + concatenatedValue)
+		panic("Could not convert string to int: " + err.Error())
 	}
-	return value, nil
-}
-
-func readInputFileAsArray(filePath string) []string {
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		panic("Error reading file: " + err.Error())
-	}
-	return strings.Split(string(data), "\n")
+	return value
 }
