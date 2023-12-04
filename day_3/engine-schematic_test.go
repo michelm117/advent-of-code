@@ -45,7 +45,8 @@ func TestCollectSymbols(t *testing.T) {
 		"$.....755+",
 	}
 	engine := NewEngine(lines)
-	symbols := engine.CollectSymbols()
+	symbolsOnly := regexp.MustCompile(`[^0-9.]`)
+	symbols := engine.CollectSymbols(symbolsOnly)
 
 	expectedLength := 3
 	if len(symbols) != expectedLength {

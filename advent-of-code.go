@@ -7,6 +7,7 @@ import (
 	"github.com/michelm117/advent-of-code/day_1"
 	"github.com/michelm117/advent-of-code/day_2"
 	"github.com/michelm117/advent-of-code/day_3"
+	"github.com/michelm117/advent-of-code/day_4"
 )
 
 func main() {
@@ -29,6 +30,10 @@ func main() {
 		notPart, gearRatio := day_3.Solve(*filePath)
 		fmt.Println("Sum of parts:", fmt.Sprint(notPart))
 		fmt.Println("gearRatio: ", fmt.Sprint(gearRatio))
+
+	case "4":
+		points := day_4.GetScratchpadPoints(*filePath)
+		fmt.Println("Total Points:", fmt.Sprint(points))
 
 	default:
 		fmt.Println("Day not found")

@@ -20,3 +20,11 @@ func ReverseString(s string) string {
 	}
 	return reversed
 }
+
+func SetFromArray(digits []string) map[string]bool {
+	set := make(map[string]bool)
+	for _, digit := range digits {
+		set[digit] = true
+	}
+	return set
+}
