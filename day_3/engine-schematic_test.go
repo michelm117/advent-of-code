@@ -129,16 +129,12 @@ func TestFindNumbers(t *testing.T) {
 	engine := NewEngine(lines)
 	numbers := engine.FindNumbers(Coord{5, 0})
 
-	expectedLength := 3
+	expectedLength := 2
 	if len(numbers) != expectedLength {
 		t.Errorf("Expected %d, got %d", expectedLength, len(numbers))
 	}
 
-	expected := []Symbol{
-		{"4", Coord{0, 0}},
-		{"7", Coord{1, 0}},
-		{"5", Coord{6, 1}},
-	}
+	expected := []string{"114", "755"}
 
 	if !reflect.DeepEqual(numbers, expected) {
 		t.Errorf("Expected %v, got %v", expected, numbers)
