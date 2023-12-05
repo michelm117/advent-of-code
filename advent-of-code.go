@@ -32,8 +32,9 @@ func main() {
 		fmt.Println("gearRatio: ", fmt.Sprint(gearRatio))
 
 	case "4":
-		points := day_4.GetScratchpadPoints(*filePath)
-		fmt.Println("Total Points:", fmt.Sprint(points))
+		solOne, solTwo := day_4.GetScratchpadPoints(*filePath)
+		fmt.Println("Solution One:", fmt.Sprint(solOne))
+		fmt.Println("Solution Two:", fmt.Sprint(solTwo))
 
 	default:
 		fmt.Println("Day not found")

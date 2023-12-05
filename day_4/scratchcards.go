@@ -4,34 +4,78 @@ import (
 	"errors"
 	"math"
 	"regexp"
+	"strconv"
 
 	"github.com/michelm117/advent-of-code/utils"
 )
 
-func GetScratchpadPoints(filePath string) int {
+func GetScratchpadPoints(filePath string) (int, int) {
 	lines := utils.ReadInputFileAsArray(filePath)
-	return calculateTotalPoints(lines)
+	partOneSolution := calculateTotalPoints(lines)
+
+	scratchCards := calculateWiningScratchCards(lines)
+
+	scratchCardsSum := 0
+	for _, value := range scratchCards {
+		scratchCardsSum += value
+	}
+	return partOneSolution, scratchCardsSum
 }
 
-func getGameSets(line string) (map[string]bool, map[string]bool, error) {
+func calculateWiningScratchCards(lines []string) map[string]int {
+	scratchCards := make(map[string]int)
+	for i := 1; i <= len(lines); i++ {
+		scratchCards[strconv.Itoa(i)] = 1
+	}
+
+	for _, line := range lines {
+		gameNbr, winningSet, scratchSet, err := getGameSets(line)
+		if err != nil {
+			panic(err)
+		}
+
+		winningNumbers := getWinningNumbersFromScratchpad(winningSet, scratchSet)
+		scratchCards = appendScratchCards(scratchCards, gameNbr, len(winningNumbers))
+	}
+	return scratchCards
+}
+
+func calculateTotalPoints(lines []string) int {
+	points := 0
+	for _, line := range lines {
+		_, winningSet, scratchSet, err := getGameSets(line)
+		if err != nil {
+			panic(err)
+		}
+
+		winningNumbers := getWinningNumbersFromScratchpad(winningSet, scratchSet)
+
+		gamePoints := calculateGamePoints(winningNumbers)
+		points += gamePoints
+	}
+	return points
+}
+
+func getGameSets(line string) (string, map[string]bool, map[string]bool, error) {
 	var winningSet map[string]bool
 	var scratchSet map[string]bool
 
-	groups := regexp.MustCompile(`Card\s+\d+: ([\d\s]+) \| ([\d\s]+)`)
+	groups := regexp.MustCompile(`Card\s+(\d)+: ([\d\s]+) \| ([\d\s]+)`)
 	digits := regexp.MustCompile(`(\d+)`)
 
 	matches := groups.FindStringSubmatch(line)
-	if len(matches) == 3 {
-		winning := matches[1]
-		scratchpad := matches[2]
 
-		winningSet = utils.SetFromArray(digits.FindAllString(winning, -1))
-		scratchSet = utils.SetFromArray(digits.FindAllString(scratchpad, -1))
+	if len(matches) != 4 {
+		return "", nil, nil, errors.New("Could not parse line: " + line)
 	}
-	if len(winningSet) == 0 || len(scratchSet) == 0 {
-		return nil, nil, errors.New("Could not parse line: " + line)
-	}
-	return winningSet, scratchSet, nil
+
+	gameNbr := matches[1]
+	winning := digits.FindAllString(matches[2], -1)
+	scratchpad := digits.FindAllString(matches[3], -1)
+
+	winningSet = utils.SetFromArray(winning)
+	scratchSet = utils.SetFromArray(scratchpad)
+	return gameNbr, winningSet, scratchSet, nil
 }
 
 func getWinningNumbersFromScratchpad(winningSet, scratchSet map[string]bool) []string {
@@ -48,18 +92,17 @@ func calculateGamePoints(winningNumbers []string) int {
 	return int(math.Pow(2, float64(len(winningNumbers)-1)))
 }
 
-func calculateTotalPoints(lines []string) int {
-	points := 0
-	for _, line := range lines {
-		winningSet, scratchSet, err := getGameSets(line)
-		if err != nil {
-			panic(err)
-		}
-
-		winningNumbers := getWinningNumbersFromScratchpad(winningSet, scratchSet)
-
-		gamePoints := calculateGamePoints(winningNumbers)
-		points += gamePoints
+func appendScratchCards(scratchCards map[string]int, gameNbrStr string, matchingNbrs int) map[string]int {
+	if matchingNbrs == 0 {
+		return scratchCards
 	}
-	return points
+
+	gameNbr, err := strconv.Atoi(gameNbrStr)
+	if err != nil {
+		panic(err)
+	}
+	for i := gameNbr + 1; i <= gameNbr+matchingNbrs; i++ {
+		scratchCards[strconv.Itoa(i)] += scratchCards[gameNbrStr]
+	}
+	return scratchCards
 }

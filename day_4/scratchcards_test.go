@@ -7,7 +7,11 @@ import (
 
 func TestGetGameSets(t *testing.T) {
 	line := "Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53"
-	actualWinning, actualScratchpad, err := getGameSets(line)
+	gameNbr, actualWinning, actualScratchpad, err := getGameSets(line)
+
+	if gameNbr != "1" {
+		t.Errorf("Expected %v, got %v", "1", gameNbr)
+	}
 
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
@@ -27,8 +31,10 @@ func TestGetGameSets(t *testing.T) {
 	}
 
 	line = "Card 2: 13 32 20 16 61 | 61 30 68 82 17 32 24 19"
-	actualWinning, actualScratchpad, err = getGameSets(line)
-
+	gameNbr, actualWinning, actualScratchpad, err = getGameSets(line)
+	if gameNbr != "2" {
+		t.Errorf("Expected %v, got %v", "2", gameNbr)
+	}
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
@@ -46,11 +52,12 @@ func TestGetGameSets(t *testing.T) {
 		t.Errorf("Expected %v, got %v", expectedScratchSet, actualScratchpad)
 	}
 
-
-
 	line = "Card    2: 13 32 20 16 61 | 61 30 68 82 17 32 24 19"
-	actualWinning, actualScratchpad, err = getGameSets(line)
+	gameNbr, actualWinning, actualScratchpad, err = getGameSets(line)
 
+	if gameNbr != "2" {
+		t.Errorf("Expected %v, got %v", "2", gameNbr)
+	}
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
@@ -119,6 +126,123 @@ func TestCalculateTotalPoints(t *testing.T) {
 	actual := calculateTotalPoints(lines)
 	expected := 13
 	if expected != actual {
+		t.Errorf("Expected %v, got %v", expected, actual)
+	}
+}
+
+func TestAddScratchCards(t *testing.T) {
+	scratchCards := map[string]int{
+		"1": 1,
+		"2": 1,
+		"3": 1,
+		"4": 1,
+		"5": 1,
+		"6": 1,
+	}
+	gameNbr := "1"
+	winningNumbers := 4
+	expected := map[string]int{
+		"1": 1,
+		"2": 2,
+		"3": 2,
+		"4": 2,
+		"5": 2,
+		"6": 1,
+	}
+	actual := appendScratchCards(scratchCards, gameNbr, winningNumbers)
+	if !reflect.DeepEqual(expected, scratchCards) {
+		t.Errorf("Expected %v, got %v", expected, actual)
+	}
+
+	scratchCards = map[string]int{
+		"1": 1,
+		"2": 2,
+		"3": 2,
+		"4": 2,
+		"5": 2,
+		"6": 1,
+	}
+	gameNbr = "2"
+	winningNumbers = 2
+	expected = map[string]int{
+		"1": 1,
+		"2": 2,
+		"3": 4,
+		"4": 4,
+		"5": 2,
+		"6": 1,
+	}
+	actual = appendScratchCards(scratchCards, gameNbr, winningNumbers)
+	if !reflect.DeepEqual(expected, scratchCards) {
+		t.Errorf("Expected %v, got %v", expected, actual)
+	}
+
+	scratchCards = map[string]int{
+		"1": 1,
+		"2": 2,
+		"3": 4,
+		"4": 4,
+		"5": 2,
+		"6": 1,
+	}
+	gameNbr = "3"
+	winningNumbers = 2
+	expected = map[string]int{
+		"1": 1,
+		"2": 2,
+		"3": 4,
+		"4": 8,
+		"5": 6,
+		"6": 1,
+	}
+	actual = appendScratchCards(scratchCards, gameNbr, winningNumbers)
+	if !reflect.DeepEqual(expected, scratchCards) {
+		t.Errorf("Expected %v, got %v", expected, actual)
+	}
+	scratchCards = map[string]int{
+		"1": 1,
+		"2": 2,
+		"3": 4,
+		"4": 8,
+		"5": 6,
+		"6": 1,
+	}
+	gameNbr = "4"
+	winningNumbers = 1
+	expected = map[string]int{
+		"1": 1,
+		"2": 2,
+		"3": 4,
+		"4": 8,
+		"5": 14,
+		"6": 1,
+	}
+	actual = appendScratchCards(scratchCards, gameNbr, winningNumbers)
+	if !reflect.DeepEqual(expected, scratchCards) {
+		t.Errorf("Expected %v, got %v", expected, actual)
+	}
+}
+
+func TestCalculateWiningScratchCards(t *testing.T) {
+	lines := []string{
+		"Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53",
+		"Card 2: 13 32 20 16 61 | 61 30 68 82 17 32 24 19",
+		"Card 3:  1 21 53 59 44 | 69 82 63 72 16 21 14  1",
+		"Card 4: 41 92 73 84 69 | 59 84 76 51 58  5 54 83",
+		"Card 5: 87 83 26 28 32 | 88 30 70 12 93 22 82 36",
+		"Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11",
+	}
+
+	actual := calculateWiningScratchCards(lines)
+	expected := map[string]int{
+		"1": 1,
+		"2": 2,
+		"3": 4,
+		"4": 8,
+		"5": 14,
+		"6": 1,
+	}
+	if !reflect.DeepEqual(expected, actual) {
 		t.Errorf("Expected %v, got %v", expected, actual)
 	}
 }
